@@ -1,0 +1,187 @@
+.invoicesPage {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem 1rem;
+  background: #f8fafc;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 24px 0 rgba(30, 41, 59, 0.07);
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+}
+
+.filtroBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  label {
+    font-weight: 500;
+    color: #334155;
+  }
+}
+
+.filtroSelect {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background: #fff;
+  color: #1e293b;
+  transition: border 0.18s;
+  &:focus {
+    border-color: #0070f3;
+    outline: none;
+  }
+}
+
+.tablaWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.invoicesTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  min-width: 700px;
+
+  th,
+  td {
+    padding: 0.7rem 0.6rem;
+    text-align: left;
+  }
+
+  th {
+    background: #e0e7ef;
+    color: #334155;
+    font-weight: 700;
+    border-bottom: 2px solid #cbd5e1;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tbody tr:nth-child(even) td {
+    background: #f1f5f9;
+  }
+
+  td {
+    background: #fff;
+    color: #1e293b;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.32em 1em;
+  border-radius: 1em;
+  font-size: 0.98em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.badgePendiente {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1.5px solid #fecaca;
+}
+
+.badgeCheque {
+  background: #fef9c3;
+  color: #ca8a04;
+  border: 1.5px solid #fde68a;
+}
+
+.badgePagado {
+  background: #dcfce7;
+  color: #16a34a;
+  border: 1.5px solid #bbf7d0;
+}
+
+.descargarBtn {
+  background: #38bdf8;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.3rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  &:hover {
+    background: #0ea5e9;
+  }
+}
+
+.noResults {
+  text-align: center;
+  color: #64748b;
+  font-size: 1.05rem;
+  padding: 1.5rem 0;
+}
+
+.totalLabel {
+  font-weight: 700;
+  color: #334155;
+  background: #e0e7ef;
+  border-bottom: none;
+}
+
+.totalValue {
+  font-weight: 700;
+  color: #2563eb;
+  background: #e0e7ef;
+  border-bottom: none;
+  font-size: 1.1rem;
+}
+
+.formFooter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+}
+
+.confirmarBtn {
+  background: linear-gradient(90deg, #0070f3 60%, #38bdf8 100%);
+  color: white;
+  padding: 0.9rem 2.5rem;
+  border: none;
+  border-radius: 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px 0 rgba(0, 112, 243, 0.08);
+  transition: background 0.2s, transform 0.1s;
+  &:hover:enabled {
+    background: linear-gradient(90deg, #2563eb 60%, #0ea5e9 100%);
+    transform: translateY(-2px) scale(1.03);
+  }
+  &:disabled {
+    background: #cbd5e1;
+    color: #64748b;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.confirmMsg {
+  color: #22c55e;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-left: 1rem;
+}

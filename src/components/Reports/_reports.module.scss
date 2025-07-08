@@ -1,0 +1,172 @@
+.reportsPage {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 1rem 3rem 1rem;
+  background: #f8fafc;
+  border-radius: 1.2rem;
+  box-shadow: 0 2px 24px 0 rgba(30, 41, 59, 0.07);
+}
+
+.filtroBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2.2rem;
+  flex-wrap: wrap;
+
+  label {
+    font-weight: 500;
+    color: #334155;
+  }
+}
+
+.filtroInput {
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background: #fff;
+  color: #1e293b;
+  transition: border 0.18s;
+  &:focus {
+    border-color: #0070f3;
+    outline: none;
+  }
+}
+
+.filtroBtn {
+  background: #38bdf8;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1.3rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 1px 8px 0 rgba(30, 41, 59, 0.06);
+  padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+
+  h3 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.7rem;
+  }
+}
+
+.chartPlaceholder {
+  min-height: 120px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.barrasMock {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.barraFila {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.barraLabel {
+  min-width: 120px;
+  font-size: 1rem;
+  color: #334155;
+  font-weight: 500;
+}
+
+.barraCont {
+  flex: 1;
+  background: #e0e7ef;
+  border-radius: 0.5rem;
+  height: 1.1rem;
+  margin-right: 0.7rem;
+  overflow: hidden;
+}
+
+.barra {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 0.5rem;
+  transition: width 0.3s;
+}
+
+.barraValor {
+  min-width: 90px;
+  font-size: 1rem;
+  color: #2563eb;
+  font-weight: 600;
+  text-align: right;
+}
+
+.simpleTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+
+  th,
+  td {
+    padding: 0.6rem 0.5rem;
+    text-align: left;
+  }
+
+  th {
+    background: #e0e7ef;
+    color: #334155;
+    font-weight: 600;
+    border-bottom: 2px solid #cbd5e1;
+  }
+
+  td {
+    background: #fff;
+    color: #1e293b;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.stockOk {
+  color: #16a34a;
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0.7rem 0;
+}
+
+.stockBajoBadge {
+  display: inline-block;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 0.5rem;
+  padding: 0.2rem 0.8rem;
+  font-weight: 700;
+  font-size: 1rem;
+}

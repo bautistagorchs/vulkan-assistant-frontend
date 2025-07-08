@@ -1,0 +1,13 @@
+.topbar {
+  background: #f4f4f4;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  h1 {
+    font-size: 1.2rem;
+  }
+  .user {
+    font-size: 0.9rem;
+  }
+}

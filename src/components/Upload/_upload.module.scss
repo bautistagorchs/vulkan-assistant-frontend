@@ -1,0 +1,172 @@
+.uploadPage {
+  min-height: 90vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2.5rem;
+
+  .uploadCard {
+    background: #fff;
+    margin-top: 10rem;
+    padding: 2.5rem 2rem;
+    border-radius: 1.25rem;
+    box-shadow: 0 6px 32px 0 rgba(0, 32, 128, 0.08);
+    min-width: 340px;
+    max-width: 400px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    animation: fadeIn 0.7s;
+  }
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    letter-spacing: -1px;
+    text-align: center;
+  }
+
+  form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    align-items: center;
+
+    input[type="file"] {
+      padding: 0.7rem 1rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.5rem;
+      background: #f1f5f9;
+      font-size: 1rem;
+      transition: border 0.2s;
+      cursor: pointer;
+      width: 100%;
+
+      &:focus {
+        border-color: #0070f3;
+        outline: none;
+      }
+    }
+
+    button {
+      background: linear-gradient(90deg, #0070f3 60%, #38bdf8 100%);
+      color: white;
+      padding: 0.8rem 2.2rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px 0 rgba(0, 112, 243, 0.08);
+      transition: background 0.2s, transform 0.1s;
+
+      &:hover:enabled {
+        background: linear-gradient(90deg, #2563eb 60%, #0ea5e9 100%);
+        transform: translateY(-2px) scale(1.03);
+      }
+      &:disabled {
+        background: #cbd5e1;
+        color: #64748b;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+    }
+  }
+
+  p {
+    margin-top: 0.5rem;
+    color: #2563eb;
+    font-size: 1rem;
+    font-weight: 500;
+    word-break: break-all;
+    text-align: center;
+  }
+
+  .listasViejasSection {
+    width: 100%;
+    max-width: 1000px;
+    margin-top: 5rem;
+    background: #f8fafc;
+    border-radius: 0.75rem;
+    padding: 1.5rem 1.2rem 1.2rem 1.2rem;
+    box-shadow: 0 1px 6px 0 rgba(30, 41, 59, 0.06);
+
+    h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 1.1rem;
+      text-align: left;
+    }
+  }
+
+  .listasViejasTableWrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .listasViejasTable {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+
+    th,
+    td {
+      padding: 0.7rem 0.6rem;
+      text-align: left;
+    }
+
+    th {
+      background: #e0e7ef;
+      color: #334155;
+      font-size: 1rem;
+      font-weight: 600;
+      border-bottom: 2px solid #cbd5e1;
+    }
+
+    td {
+      background: #fff;
+      color: #1e293b;
+      font-size: 0.98rem;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .verBtn {
+    background: #38bdf8;
+    color: #fff;
+    border: none;
+    border-radius: 0.4rem;
+    padding: 0.35rem 1.1rem;
+    font-size: 0.98rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s;
+    &:hover {
+      background: #0ea5e9;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,8 @@
+.appContainer {
+  display: flex;
+  background-color: white;
+  .mainContent {
+    flex-grow: 1;
+    padding: 20px;
+  }
+}
