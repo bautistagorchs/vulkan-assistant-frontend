@@ -8,7 +8,10 @@ export default function Sidebar() {
       <nav>
         <ul>
           <li>
-            <Link href="/upload">Cargar Lista</Link>
+            <Link href="/upload-price-list">Cargar Lista</Link>
+          </li>
+          <li>
+            <Link href="/upload-client">Clientes (Crear/Visualizar)</Link>
           </li>
           <li>
             <Link href="/orders">Pedidos</Link>
@@ -18,6 +21,9 @@ export default function Sidebar() {
           </li>
           <li>
             <Link href="/reports">Reportes</Link>
+          </li>
+          <li>
+            <Link href="/api-test">API Test</Link>
           </li>
         </ul>
       </nav>

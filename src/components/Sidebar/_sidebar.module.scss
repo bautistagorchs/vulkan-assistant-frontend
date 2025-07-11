@@ -2,7 +2,7 @@
   width: 250px;
   background: rgb(32, 158, 145);
   color: white;
-  height: 100vh;
+  min-height: 100vh;
   padding: 20px;
   h2 {
     font-size: 1.5rem;
@@ -11,7 +11,7 @@
   ul {
     list-style: none;
     li {
-      margin: 10px 0;
+      margin: 20px 0;
       a {
         color: white;
         text-decoration: none;
