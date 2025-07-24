@@ -3,14 +3,8 @@
 import React, { useEffect, useState } from "react";
 import s from "./_orders.module.scss";
 import { getClients, getAllProducts, createOrderWithBoxes } from "@/lib/api";
-import { Client, Box, SelectedProduct, TabKey } from "@/lib/types";
+import { Client, Box, SelectedProduct, TabKey, Product } from "@/lib/types";
 import BoxSelector from "../BoxSelector/BoxSelector";
-
-interface Product {
-  id: number;
-  name: string;
-  basePrice: number;
-}
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("nuevo");
@@ -19,7 +13,7 @@ const Orders = () => {
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [productos, setProductos] = useState<Product[]>([]);
-  // console.log(productos);
+  console.log(productos);
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [clienteId, setClienteId] = useState<number | "">("");
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
@@ -222,7 +216,11 @@ const Orders = () => {
                             Elegir producto para agregar...
                           </option>
                           {productos.map((p) => (
-                            <option key={p.id} value={p.id}>
+                            <option
+                              key={p.id}
+                              value={p.id}
+                              disabled={!p.hasStock}
+                            >
                               {p.name}
                             </option>
                           ))}

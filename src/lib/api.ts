@@ -80,36 +80,9 @@ export const uploadPriceList = async (
   return res.data;
 };
 
-// export const uploadJsonPriceList = async (
-//   file: File,
-//   commissionPercentage: number
-// ) => {
-//   const formData = new FormData();
-//   formData.append("file", file);
-//   formData.append("commissionPercentage", commissionPercentage.toString());
-//   console.log(
-//     "Subiendo archivo JSON:",
-//     file.name,
-//     "con comisión:",
-//     commissionPercentage + "%"
-//   );
-//   console.log(formData);
-
-//   const res = await axios.post(
-//     `${process.env.NEXT_PUBLIC_API_URL}/api/upload/confirm-boxes-json`,
-//     formData,
-//     {
-//       headers: {
-//         "Content-Type": "multipart/form-data",
-//       },
-//     }
-//   );
-//   return res.data;
-// };
-
 export const uploadJsonPriceList = async (jsonData: unknown) => {
   const res = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/upload/confirm-boxes-json`,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/upload/upload-boxes-json`,
     {
       data: jsonData,
     },
@@ -122,16 +95,10 @@ export const uploadJsonPriceList = async (jsonData: unknown) => {
   return res.data;
 };
 
-export const confirmUpload = async (uploadResponse: {
-  success: boolean;
-  fileName: string;
-  message: string;
-  data?: Record<string, unknown>;
-  totalItems?: number;
-}) => {
+export const confirmUpload = async (dataToConfirm: { data: unknown }) => {
   const res = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/upload/confirm-json-upload`,
-    uploadResponse,
+    `${process.env.NEXT_PUBLIC_API_URL}/api/upload/confirm-boxes-json`,
+    dataToConfirm,
     { headers: { "Content-Type": "application/json" } }
   );
   return res.data;

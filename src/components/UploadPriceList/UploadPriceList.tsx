@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import { uploadJsonPriceList, confirmUpload } from "@/lib/api";
 import s from "./_uploadPriceList.module.scss";
 import { UploadResponse } from "@/lib/types";
@@ -13,10 +13,10 @@ export default function UploadPriceList() {
   const [uploadResponse, setUploadResponse] = useState<UploadResponse | null>(
     null
   );
-  console.log("la upload es esta", uploadResponse);
-
+  const [originalData, setOriginalData] = useState<any>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmationComplete, setConfirmationComplete] = useState(false);
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   interface FileChangeEvent extends React.ChangeEvent<HTMLInputElement> {}
 
@@ -52,6 +52,7 @@ export default function UploadPriceList() {
 
         const response = await uploadJsonPriceList(jsonData);
 
+        setOriginalData(jsonData); // Guardar datos originales
         setUploadResponse({
           ...response,
           fileName: file.name,
@@ -72,13 +73,13 @@ export default function UploadPriceList() {
   };
 
   const handleConfirm = async () => {
-    if (!uploadResponse) return;
+    if (!uploadResponse || !originalData) return;
 
     setIsConfirming(true);
+
     try {
-      await confirmUpload(uploadResponse);
+      await confirmUpload({ data: originalData });
       setConfirmationComplete(true);
-      console.log("Confirmación enviada al backend exitosamente");
 
       // Close modal after 1.5 seconds
       setTimeout(() => {
@@ -95,8 +96,22 @@ export default function UploadPriceList() {
   const closeModal = () => {
     setShowConfirmationModal(false);
     setUploadResponse(null);
+    setOriginalData(null);
     setIsConfirming(false);
     setConfirmationComplete(false);
+    setExpandedProduct(null);
+  };
+
+  const toggleProductExpansion = (productName: string, hasBoxes: boolean) => {
+    // if (!hasBoxes) return;
+    setExpandedProduct(expandedProduct === productName ? null : productName);
+  };
+
+  const getBoxesForProduct = (productName: string) => {
+    if (!uploadResponse?.results?.boxes) return [];
+    return uploadResponse.results.boxes.filter(
+      (box: any) => box.productName === productName
+    );
   };
 
   return (
@@ -194,27 +209,122 @@ export default function UploadPriceList() {
 
                 {uploadResponse.results && (
                   <div className={s.dataPreview}>
-                    <h5>Vista previa de los productos:</h5>
+                    <h5>Resumen de productos actualizados:</h5>
+                    <div className={s.summaryStats}>
+                      <p>
+                        <strong>Productos creados:</strong>{" "}
+                        {uploadResponse.results.productsCreated}
+                      </p>
+                      <p>
+                        <strong>Productos actualizados:</strong>{" "}
+                        {uploadResponse.results.productsUpdated}
+                      </p>
+                      <p>
+                        <strong>Total cajas cargadas:</strong>{" "}
+                        {uploadResponse.results.boxesCreated}
+                      </p>
+                    </div>
+
                     <div className={s.tableContainer}>
                       <table className={s.productsTable}>
                         <thead>
                           <tr>
                             <th>#</th>
                             <th>Producto</th>
-                            <th>Precio Base</th>
+                            <th>Precio Anterior</th>
+                            <th>Precio Nuevo</th>
+                            <th>Cajas Cargadas</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {uploadResponse.results.products.map(
-                            (product: any, index: number) => (
-                              <tr key={index}>
-                                <td>{index + 1}</td>
-                                <td>{product.name}</td>
-                                <td>
-                                  ${product.basePrice.toLocaleString("es-AR")}
-                                </td>
-                              </tr>
-                            )
+                          {uploadResponse.results.productSummary?.map(
+                            (product: any, index: number) => {
+                              const hasBoxes = product.boxesLoaded > 0;
+                              const isExpanded =
+                                expandedProduct === product.name;
+                              const productBoxes = getBoxesForProduct(
+                                product.name
+                              );
+
+                              return (
+                                <React.Fragment key={index}>
+                                  <tr
+                                    className={hasBoxes ? s.clickableRow : ""}
+                                    onClick={() =>
+                                      toggleProductExpansion(
+                                        product.name,
+                                        hasBoxes
+                                      )
+                                    }
+                                  >
+                                    <td>{index + 1}</td>
+                                    <td>
+                                      <div className={s.productNameCell}>
+                                        {product.name}
+                                        {hasBoxes && (
+                                          <span className={s.expandIcon}>
+                                            {isExpanded ? "▼" : "▶"}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      {product.previousPrice !== null
+                                        ? `$${product.previousPrice.toLocaleString(
+                                            "es-AR"
+                                          )}`
+                                        : "Nuevo producto"}
+                                    </td>
+                                    <td>
+                                      $
+                                      {product.newPrice.toLocaleString("es-AR")}
+                                    </td>
+                                    <td>
+                                      <span
+                                        className={
+                                          hasBoxes
+                                            ? s.boxCountClickable
+                                            : s.boxCount
+                                        }
+                                      >
+                                        {product.boxesLoaded} cajas
+                                      </span>
+                                    </td>
+                                  </tr>
+                                  {isExpanded && hasBoxes && (
+                                    <tr className={s.expandedRow}>
+                                      <td colSpan={5}>
+                                        <div className={s.boxesDetail}>
+                                          <div className={s.boxesGrid}>
+                                            {productBoxes.map(
+                                              (box: any, boxIndex: number) => (
+                                                <div
+                                                  key={boxIndex}
+                                                  className={s.boxItem}
+                                                >
+                                                  <div className={s.boxInfo}>
+                                                    <span
+                                                      className={s.boxWeight}
+                                                    >
+                                                      {box.kg} kg
+                                                    </span>
+                                                    <span className={s.boxType}>
+                                                      {box.isFrozen
+                                                        ? "🧊 Congelado"
+                                                        : "❄️ Refrigerado"}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              )
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            }
                           )}
                         </tbody>
                       </table>

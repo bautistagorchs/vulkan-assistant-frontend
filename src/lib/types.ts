@@ -4,7 +4,13 @@ export interface Product {
   price: number;
   stockKg: number;
 }
-
+export interface Product {
+  id: number;
+  name: string;
+  basePrice: number;
+  active: boolean;
+  hasStock?: boolean;
+}
 export interface Box {
   id: number;
   productId: number;
@@ -58,7 +64,25 @@ export interface UploadResponse {
     products: Array<{
       name: string;
       basePrice: number;
+      previousPrice?: number;
+      boxesLoaded: number;
     }>;
+    productSummary: Array<{
+      name: string;
+      previousPrice: number | null;
+      newPrice: number;
+      boxesLoaded: number;
+    }>;
+    boxes: Array<{
+      productName: string;
+      kg: number;
+      isFrozen: boolean;
+    }>;
+    productsUpdated: number;
+    productsCreated: number;
+    boxesCreated: number;
+    totalProducts: number;
+    totalBoxes: number;
     [key: string]: unknown;
   };
   totalItems?: number;
