@@ -2,96 +2,146 @@
 
 import React, { useEffect, useState } from "react";
 import s from "./_orders.module.scss";
-import { getClients } from "@/lib/api";
-import { Client } from "@/lib/types";
+import { getClients, getAllProducts, createOrderWithBoxes } from "@/lib/api";
+import { Client, Box, SelectedProduct, TabKey } from "@/lib/types";
+import BoxSelector from "../BoxSelector/BoxSelector";
 
-const productos = [
-  { id: 1, nombre: "Asado", precioPorKg: 3200 },
-  { id: 2, nombre: "Vacío", precioPorKg: 3500 },
-  { id: 3, nombre: "Matambre", precioPorKg: 3400 },
-];
-
-const CAJA_KG = 23;
-
-type TabKey = "nuevo" | "listado";
+interface Product {
+  id: number;
+  name: string;
+  basePrice: number;
+}
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("nuevo");
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [orders] = useState([]);
+  const [loading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [productos, setProductos] = useState<Product[]>([]);
+  // console.log(productos);
+  const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [clienteId, setClienteId] = useState<number | "">("");
-  const [items, setItems] = useState<{ productoId: number; cajas: number }[]>(
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
     []
   );
-  const [productoSeleccionado, setProductoSeleccionado] = useState<number | "">(
-    ""
-  );
-  const [cajas, setCajas] = useState<number | "">("");
+  const [showBoxSelector, setShowBoxSelector] = useState<boolean>(false);
+  const [selectedProductForBoxes, setSelectedProductForBoxes] =
+    useState<Product | null>(null);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Agregar producto al pedido
-  const handleAgregarProducto = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!productoSeleccionado || !cajas || Number(cajas) <= 0) return;
-    setItems((prev) => {
-      // Si ya está, sumo cajas
-      const idx = prev.findIndex((i) => i.productoId === productoSeleccionado);
-      if (idx >= 0) {
+  // Seleccionar producto para elegir cajas
+  const handleSelectProduct = (productId: number) => {
+    const product = productos.find((p) => p.id === productId);
+    if (product) {
+      setSelectedProductForBoxes(product);
+      setShowBoxSelector(true);
+    }
+  };
+
+  // Callback cuando se seleccionan cajas
+  const handleBoxesSelected = (productId: number, selectedBoxes: Box[]) => {
+    const product = productos.find((p) => p.id === productId);
+    if (!product) return;
+
+    const totalKg = selectedBoxes.reduce((acc, box) => acc + box.kg, 0);
+
+    const newSelectedProduct: SelectedProduct = {
+      productId,
+      productName: product.name,
+      selectedBoxes,
+      totalKg,
+    };
+
+    setSelectedProducts((prev) => {
+      // Si ya existe el producto, reemplazarlo
+      const existingIndex = prev.findIndex((p) => p.productId === productId);
+      if (existingIndex >= 0) {
         const updated = [...prev];
-        updated[idx].cajas += Number(cajas);
+        updated[existingIndex] = newSelectedProduct;
         return updated;
       }
-      return [
-        ...prev,
-        { productoId: Number(productoSeleccionado), cajas: Number(cajas) },
-      ];
+      // Si no existe, agregarlo
+      return [...prev, newSelectedProduct];
     });
-    setProductoSeleccionado("");
-    setCajas("");
+
+    setShowBoxSelector(false);
+    setSelectedProductForBoxes(null);
+  };
+
+  // Cancelar selección de cajas
+  const handleCancelBoxSelection = () => {
+    setShowBoxSelector(false);
+    setSelectedProductForBoxes(null);
   };
 
   // Eliminar producto del pedido
-  const handleEliminarProducto = (productoId: number) => {
-    setItems((prev) => prev.filter((i) => i.productoId !== productoId));
+  const handleEliminarProducto = (productId: number) => {
+    setSelectedProducts((prev) =>
+      prev.filter((p) => p.productId !== productId)
+    );
   };
 
-  // Confirmar pedido (handler preparado)
-  const handleConfirmarPedido = (e: React.FormEvent) => {
+  // Confirmar pedido
+  const handleConfirmarPedido = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí se enviaría el pedido al backend
-    setConfirmMsg("¡Pedido confirmado!");
-    setTimeout(() => setConfirmMsg(null), 2500);
-    // Opcional: limpiar formulario
-    // setClienteId(""); setItems([]);
+    if (!clienteId || selectedProducts.length === 0) return;
+
+    try {
+      setSubmitting(true);
+      const orderItems = selectedProducts.map((product) => ({
+        productId: product.productId,
+        boxIds: product.selectedBoxes.map((box) => box.id),
+      }));
+
+      await createOrderWithBoxes(Number(clienteId), orderItems);
+
+      setConfirmMsg("¡Pedido confirmado exitosamente!");
+      setTimeout(() => setConfirmMsg(null), 3000);
+
+      // Limpiar formulario
+      setClienteId("");
+      setSelectedProducts([]);
+    } catch (error) {
+      console.error("Error al confirmar pedido:", error);
+      setError("Error al confirmar el pedido. Intenta nuevamente.");
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  // Calcular totales
-  const resumen = items.map((item) => {
-    const prod = productos.find((p) => p.id === item.productoId)!;
-    const kilos = item.cajas * CAJA_KG;
-    const subtotal = kilos * prod.precioPorKg;
-    return {
-      ...item,
-      nombre: prod.nombre,
-      precioPorKg: prod.precioPorKg,
-      kilos,
-      subtotal,
-    };
-  });
-  const total = resumen.reduce((acc, r) => acc + r.subtotal, 0);
+  // Calcular totales (necesitarías el precio por kg desde el backend)
+  const calcularTotales = () => {
+    // Por ahora sin precios, solo mostramos kg totales
+    const totalKg = selectedProducts.reduce(
+      (acc, product) => acc + product.totalKg,
+      0
+    );
+    return { totalKg };
+  };
+
+  const { totalKg } = calcularTotales();
 
   useEffect(() => {
-    const fetchClients = async () => {
+    const fetchData = async () => {
       try {
-        const data = await getClients();
-        setClients(data);
+        setLoadingProducts(true);
+        const [clientsData, productsData] = await Promise.all([
+          getClients(),
+          getAllProducts(),
+        ]);
+        setClients(clientsData);
+        setProductos(productsData);
       } catch (error) {
-        console.error("Error al cargar clientes:", error);
+        console.error("Error al cargar datos:", error);
+        setError("Error al cargar datos del servidor");
+      } finally {
+        setLoadingProducts(false);
       }
     };
-    fetchClients();
+    fetchData();
   }, []);
 
   return (
@@ -119,136 +169,145 @@ const Orders = () => {
         <section className={s.newOrder}>
           <div className={s.content}>
             <h2>Nuevo Pedido</h2>
-            <form className={s.ordersForm} onSubmit={handleConfirmarPedido}>
-              <div className={s.formBlock}>
-                <label>Cliente</label>
-                <select
-                  value={clienteId}
-                  onChange={(e) => setClienteId(Number(e.target.value))}
-                  required
-                  className={s.input}
-                >
-                  <option value="">Seleccionar cliente...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+            {error && <div className={s.error}>{error}</div>}
+            {loadingProducts ? (
+              <div className={s.ordersLoading}>
+                Cargando productos y clientes...
               </div>
-
-              <div className={s.formBlock}>
-                <label>Producto</label>
-                <div className={s.productoRow}>
-                  <select
-                    value={productoSeleccionado}
-                    onChange={(e) =>
-                      setProductoSeleccionado(Number(e.target.value))
-                    }
-                    className={s.input}
-                  >
-                    <option value="">Elegir producto...</option>
-                    {productos.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nombre} (${p.precioPorKg}/kg)
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min={1}
-                    placeholder="Cajas"
-                    value={cajas}
-                    onChange={(e) => setCajas(Number(e.target.value))}
-                    className={s.input}
-                    style={{ width: 90 }}
+            ) : (
+              <>
+                {showBoxSelector && selectedProductForBoxes ? (
+                  <BoxSelector
+                    productId={selectedProductForBoxes.id}
+                    productName={selectedProductForBoxes.name}
+                    onBoxesSelected={handleBoxesSelected}
+                    onCancel={handleCancelBoxSelection}
                   />
-                  <button
-                    className={s.agregarBtn}
-                    onClick={handleAgregarProducto}
-                    type="button"
-                    disabled={
-                      !productoSeleccionado || !cajas || Number(cajas) <= 0
-                    }
+                ) : (
+                  <form
+                    className={s.ordersForm}
+                    onSubmit={handleConfirmarPedido}
                   >
-                    Agregar
-                  </button>
-                </div>
-                <div className={s.kgHint}>
-                  {cajas && Number(cajas) > 0 && (
-                    <span>
-                      {Number(cajas) * CAJA_KG} kg ({cajas} caja
-                      {Number(cajas) > 1 ? "s" : ""})
-                    </span>
-                  )}
-                </div>
-              </div>
+                    <div className={s.formBlock}>
+                      <label>Cliente</label>
+                      <select
+                        value={clienteId}
+                        onChange={(e) => setClienteId(Number(e.target.value))}
+                        required
+                        className={s.input}
+                      >
+                        <option value="">Seleccionar cliente...</option>
+                        {clients.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-              {items.length > 0 && (
-                <div className={s.resumenBlock}>
-                  <h3>Resumen del pedido</h3>
-                  <table className={s.resumenTable}>
-                    <thead>
-                      <tr>
-                        <th>Producto</th>
-                        <th>Cajas</th>
-                        <th>Kilos</th>
-                        <th>Precio/kg</th>
-                        <th>Subtotal</th>
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resumen.map((r) => (
-                        <tr key={r.productoId}>
-                          <td>{r.nombre}</td>
-                          <td>{r.cajas}</td>
-                          <td>{r.kilos}</td>
-                          <td>${r.precioPorKg}</td>
-                          <td>${r.subtotal.toLocaleString()}</td>
-                          <td>
-                            <button
-                              className={s.eliminarBtn}
-                              type="button"
-                              onClick={() =>
-                                handleEliminarProducto(r.productoId)
-                              }
-                              title="Eliminar"
+                    <div className={s.formBlock}>
+                      <label>Agregar Producto</label>
+                      <div className={s.productoRow}>
+                        <select
+                          onChange={(e) => {
+                            const productId = Number(e.target.value);
+                            if (productId) {
+                              handleSelectProduct(productId);
+                              e.target.value = ""; // Reset select
+                            }
+                          }}
+                          className={s.input}
+                        >
+                          <option value="">
+                            Elegir producto para agregar...
+                          </option>
+                          {productos.map((p) => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className={s.hint}>
+                        Seleccioná un producto para elegir sus cajas disponibles
+                      </div>
+                    </div>
+
+                    {selectedProducts.length > 0 && (
+                      <div className={s.resumenBlock}>
+                        <h3>Resumen del pedido</h3>
+                        <div className={s.productsList}>
+                          {selectedProducts.map((product) => (
+                            <div
+                              key={product.productId}
+                              className={s.productCard}
                             >
-                              ×
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <td colSpan={4} className={s.totalLabel}>
-                          Total
-                        </td>
-                        <td className={s.totalValue}>
-                          ${total.toLocaleString()}
-                        </td>
-                        <td></td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              )}
+                              <div className={s.productHeader}>
+                                <h4>{product.productName}</h4>
+                                <button
+                                  className={s.eliminarBtn}
+                                  type="button"
+                                  onClick={() =>
+                                    handleEliminarProducto(product.productId)
+                                  }
+                                  title="Eliminar producto"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                              <div className={s.boxesList}>
+                                {product.selectedBoxes.map((box) => (
+                                  <div key={box.id} className={s.boxItem}>
+                                    <span className={s.boxWeight}>
+                                      {box.kg} kg
+                                    </span>
+                                    <span className={s.boxType}>
+                                      {box.isFrozen
+                                        ? "🧊 Congelado"
+                                        : box.isRefrigerated
+                                        ? "❄️ Refrigerado"
+                                        : "🌡️ Ambiente"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className={s.productTotal}>
+                                Total: <strong>{product.totalKg} kg</strong>(
+                                {product.selectedBoxes.length} caja
+                                {product.selectedBoxes.length !== 1 ? "s" : ""})
+                              </div>
+                            </div>
+                          ))}
+                        </div>
 
-              <div className={s.formFooter}>
-                <button
-                  className={s.confirmarBtn}
-                  type="submit"
-                  disabled={!clienteId || items.length === 0}
-                >
-                  Confirmar pedido
-                </button>
-                {confirmMsg && (
-                  <span className={s.confirmMsg}>{confirmMsg}</span>
+                        <div className={s.orderSummary}>
+                          <div className={s.totalKg}>
+                            <strong>Total del pedido: {totalKg} kg</strong>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className={s.formFooter}>
+                      <button
+                        className={s.confirmarBtn}
+                        type="submit"
+                        disabled={
+                          !clienteId ||
+                          selectedProducts.length === 0 ||
+                          submitting
+                        }
+                      >
+                        {submitting ? "Confirmando..." : "Confirmar pedido"}
+                      </button>
+                      {confirmMsg && (
+                        <span className={s.confirmMsg}>{confirmMsg}</span>
+                      )}
+                    </div>
+                  </form>
                 )}
-              </div>
-            </form>
+              </>
+            )}
           </div>
         </section>
       )}
@@ -267,8 +326,8 @@ const Orders = () => {
                     <th>Fecha</th>
                     <th>Productos</th>
                     <th>Kilos Totales</th>
-                    <th>Total</th>
-                    <th>Estado Pago</th>
+                    <th>Total Cajas</th>
+                    <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,37 +338,41 @@ const Orders = () => {
                       </td>
                     </tr>
                   ) : (
-                    ""
-                    // orders.map((order) => {
-                    //   const client = clients.find((c) => c.id === order.clientId);
-                    //   const totalKilos = order.items.reduce(
-                    //     (acc, item) => acc + item.cajas * CAJA_KG,
-                    //     0
-                    //   );
-                    //   const totalPrice = order.items.reduce((acc, item) => {
-                    //     const prod = productos.find((p) => p.id === item.productoId);
-                    //     return acc + (prod ? item.cajas * CAJA_KG * prod.precioPorKg : 0);
-                    //   }, 0);
-                    //   return (
-                    // <tr key={order.id}>
-                    //   <td>{client?.name || "Desconocido"}</td>
-                    //   <td>{new Date(order.fecha).toLocaleDateString()}</td>
-                    //   <td>
-                    //     {order.items
-                    //       .map((item) => {
-                    //         const prod = productos.find((p) => p.id === item.productoId);
-                    //         return `${item.cajas} caja${item.cajas > 1 ? "s" : ""} ${prod?.nombre || "Desconocido"}`;
-                    //       })
-                    //       .join(", ")}
-                    //   </td>
-                    //   <td>{totalKilos} kg</td>
-                    //   <td>${totalPrice.toLocaleString()}</td>
-                    //   <td className={s[order.estadoPago.toLowerCase()]}>
-                    //     {order.estadoPago}
-                    //   </td>
-                    // </tr>
-                    //   );
-                    // })
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    orders.map((order: any) => {
+                      const client = clients.find(
+                        (c) => c.id === order.clientId
+                      );
+                      return (
+                        <tr key={order.id}>
+                          <td>{client?.name || "Desconocido"}</td>
+                          <td>{new Date(order.date).toLocaleDateString()}</td>
+                          <td>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {order.items
+                              ?.map((item: any) => {
+                                const prod = productos.find(
+                                  (p) => p.id === item.productId
+                                );
+                                return `${prod?.name || "Desconocido"} (${
+                                  item.boxIds?.length || 0
+                                } cajas)`;
+                              })
+                              .join(", ")}
+                          </td>
+                          <td>{order.totalKg || 0} kg</td>
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          <td>
+                            {order.items?.reduce(
+                              (acc: number, item: any) =>
+                                acc + (item.boxIds?.length || 0),
+                              0
+                            ) || 0}
+                          </td>
+                          <td>Confirmado</td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
