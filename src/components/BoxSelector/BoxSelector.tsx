@@ -12,7 +12,7 @@ const BoxSelector: React.FC<BoxSelectorProps> = ({
   onCancel,
 }) => {
   const [boxes, setBoxes] = useState<Box[]>([]);
-  console.log(boxes);
+  boxes;
 
   const [selectedBoxes, setSelectedBoxes] = useState<Box[]>([]);
   const [loading, setLoading] = useState<boolean>(true);

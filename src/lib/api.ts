@@ -61,12 +61,6 @@ export const uploadPriceList = async (
   const formData = new FormData();
   formData.append("file", file);
   formData.append("commissionPercentage", commissionPercentage.toString());
-  console.log(
-    "Subiendo archivo:",
-    file.name,
-    "con comisión:",
-    commissionPercentage + "%"
-  );
 
   const res = await axios.post(
     `${process.env.NEXT_PUBLIC_API_URL}/api/upload/format-excel`,

@@ -13,7 +13,7 @@ const Orders = () => {
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [productos, setProductos] = useState<Product[]>([]);
-  console.log(productos);
+  productos;
   const [loadingProducts, setLoadingProducts] = useState<boolean>(false);
   const [clienteId, setClienteId] = useState<number | "">("");
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
