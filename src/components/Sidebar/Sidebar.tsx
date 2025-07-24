@@ -11,6 +11,9 @@ export default function Sidebar() {
             <Link href="/upload-price-list">Cargar Lista</Link>
           </li>
           <li>
+            <Link href="/my-stock">Mi Stock</Link>
+          </li>
+          <li>
             <Link href="/upload-client">Clientes (Crear/Visualizar)</Link>
           </li>
           <li>

@@ -133,3 +133,62 @@ export const createOrderWithBoxes = async (
   );
   return res.data;
 };
+
+// Stock API
+export const getStock = async () => {
+  const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/stock`);
+  return res.data;
+};
+
+export const updateProduct = async (
+  id: number,
+  data: {
+    name?: string;
+    basePrice?: number;
+    active?: boolean;
+  }
+) => {
+  const res = await axios.put(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/stock/products/${id}`,
+    data,
+    { headers: { "Content-Type": "application/json" } }
+  );
+  return res.data;
+};
+
+export const updateBox = async (
+  id: number,
+  data: {
+    kg?: number;
+    isFrozen?: boolean;
+  }
+) => {
+  const res = await axios.put(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/stock/boxes/${id}`,
+    data,
+    { headers: { "Content-Type": "application/json" } }
+  );
+  return res.data;
+};
+
+export const deleteBox = async (id: number) => {
+  const res = await axios.delete(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/stock/boxes/${id}`
+  );
+  return res.data;
+};
+
+export const addBoxToProduct = async (
+  productId: number,
+  data: {
+    kg: number;
+    isFrozen: boolean;
+  }
+) => {
+  const res = await axios.post(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/stock/products/${productId}/boxes`,
+    data,
+    { headers: { "Content-Type": "application/json" } }
+  );
+  return res.data;
+};

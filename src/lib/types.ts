@@ -11,12 +11,37 @@ export interface Product {
   active: boolean;
   hasStock?: boolean;
 }
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stockKg: number;
+}
+
+export interface ProductWithStock {
+  id: number;
+  name: string;
+  basePrice: number;
+  active: boolean;
+  hasStock: boolean;
+  boxes: BoxWithDetails[];
+}
+
 export interface Box {
   id: number;
   productId: number;
   kg: number;
   isRefrigerated: boolean;
   isFrozen: boolean;
+}
+
+export interface BoxWithDetails {
+  id: number;
+  productId: number;
+  kg: number;
+  isFrozen: boolean;
+  createdAt: string;
+  usedInOrderItemId: number | null;
 }
 
 export interface Client {
