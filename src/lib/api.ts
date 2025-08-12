@@ -54,26 +54,6 @@ export const createClient = async (client: {
   return res.data;
 };
 
-export const uploadPriceList = async (
-  file: File,
-  commissionPercentage: number
-) => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("commissionPercentage", commissionPercentage.toString());
-
-  const res = await axios.post(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/upload/format-excel`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
-  return res.data;
-};
-
 export const uploadJsonPriceList = async (jsonData: unknown) => {
   const res = await axios.post(
     `${process.env.NEXT_PUBLIC_API_URL}/api/upload/upload-boxes-json`,
@@ -174,6 +154,13 @@ export const updateBox = async (
 export const deleteBox = async (id: number) => {
   const res = await axios.delete(
     `${process.env.NEXT_PUBLIC_API_URL}/api/stock/boxes/${id}`
+  );
+  return res.data;
+};
+
+export const deleteAllStock = async () => {
+  const res = await axios.delete(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/stock/all`
   );
   return res.data;
 };

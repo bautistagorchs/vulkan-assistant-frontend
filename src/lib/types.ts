@@ -40,6 +40,7 @@ export interface BoxWithDetails {
   productId: number;
   kg: number;
   isFrozen: boolean;
+  entryDate?: string;
   createdAt: string;
   usedInOrderItemId: number | null;
 }
@@ -112,3 +113,54 @@ export interface UploadResponse {
   };
   totalItems?: number;
 }
+
+export interface ConfirmationModalProps {
+  uploadResponse: UploadResponse;
+  originalData: any;
+  availableEntryDates: string[];
+  entryDateLabels: string[];
+  boxEntryDates: { [key: string]: string };
+  boxFrozenStatus: { [key: string]: boolean };
+  onUpdateEntryDate: (index: number, newDate: string) => void;
+  onAddEntryDate: () => void;
+  onRemoveEntryDate: () => void;
+  onBoxFrozenChange: (boxKey: string, isFrozen: boolean) => void;
+  onBoxEntryDateChange: (boxKey: string, entryDate: string) => void;
+  onClose: () => void;
+  onError: (error: string) => void;
+  onSuccess: () => void;
+  getModifiedBoxes: (
+    originalData: any[],
+    availableEntryDates: string[]
+  ) => any[];
+}
+
+// MyStock Component Types
+export interface EditingItem {
+  type: "product" | "box" | "newBox";
+  id: number | null;
+  productId?: number;
+}
+
+export interface ConfirmAction {
+  type: "save" | "delete";
+  data?: any;
+  originalData?: any;
+  itemName?: string;
+}
+
+export interface ProductEditValues {
+  name: string;
+  basePrice: number;
+  active: boolean;
+}
+
+export interface BoxEditValues {
+  kg: number;
+  isFrozen: boolean;
+}
+
+export type EditValues =
+  | ProductEditValues
+  | BoxEditValues
+  | Record<string, any>;

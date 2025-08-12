@@ -199,6 +199,8 @@ const Orders = () => {
                       </select>
                     </div>
 
+                    <div className={s.clientInfo}></div>
+
                     <div className={s.formBlock}>
                       <label>Agregar Producto</label>
                       <div className={s.productoRow}>

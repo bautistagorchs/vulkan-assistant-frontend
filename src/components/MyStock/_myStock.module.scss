@@ -90,6 +90,10 @@
   display: flex;
   align-items: center;
   color: #374151;
+  gap: 0.5rem;
+}
+#stockCell {
+  padding: 1rem 0;
 }
 
 .productNameCell {
@@ -126,8 +130,9 @@
 .stockCount {
   padding: 0.25rem 0.75rem;
   border-radius: 0.375rem;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
+  letter-spacing: 0.5px;
 
   &.hasStock {
     background: #dbeafe;
@@ -170,6 +175,7 @@
   border-radius: 0.375rem;
   font-size: 0.875rem;
   background: white;
+  color: black;
 }
 
 .editActions {
@@ -289,5 +295,329 @@
 
   &:hover {
     background: #4f46e5;
+  }
+}
+
+// Modal de confirmación
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.confirmModal {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+
+  h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #64748b;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #e2e8f0;
+  }
+}
+
+.modalContent {
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.itemInfo {
+  margin-bottom: 1.5rem;
+
+  h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #334155;
+  }
+}
+
+.changesSection {
+  h5 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #475569;
+  }
+}
+
+.changesGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.changeItem {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+
+  &.changed {
+    background: #fef3c7;
+    border-color: #f59e0b;
+  }
+
+  &.unchanged {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+  }
+}
+
+.fieldName {
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.values {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.originalValue {
+  padding: 0.25rem 0.5rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  text-decoration: line-through;
+}
+
+.arrow {
+  color: #6b7280;
+  font-weight: bold;
+}
+
+.newLabel {
+  color: #059669;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.newValue {
+  padding: 0.25rem 0.5rem;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+
+  &.highlighted {
+    background: #10b981;
+    color: white;
+    font-weight: 600;
+  }
+}
+
+.deleteWarning {
+  text-align: center;
+  padding: 1rem;
+
+  .warningIcon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #dc2626;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+}
+
+.deleteDetails {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+
+  p {
+    margin: 0.25rem 0;
+    color: #374151;
+    font-weight: normal;
+    font-size: 0.875rem;
+  }
+}
+
+.modalFooter {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.cancelModalBtn {
+  background: #6b7280;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #4b5563;
+  }
+}
+
+.confirmSaveBtn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #059669;
+  }
+}
+
+.confirmDeleteBtn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #dc2626;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// Bulk Actions Section
+.bulkActions {
+  margin-top: 2rem;
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.bulkActionsTitle {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.bulkActionsContent {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bulkActionsDescription {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.bulkDeleteBtn {
+  background: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: flex-start;
+
+  &:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }

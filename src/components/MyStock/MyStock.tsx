@@ -6,20 +6,30 @@ import {
   updateBox,
   deleteBox,
   addBoxToProduct,
+  deleteAllStock,
 } from "@/lib/api";
-import { ProductWithStock, BoxWithDetails } from "@/lib/types";
+import {
+  ProductWithStock,
+  BoxWithDetails,
+  EditingItem,
+  ConfirmAction,
+  ProductEditValues,
+  BoxEditValues,
+  EditValues,
+} from "@/lib/types";
 import s from "./_myStock.module.scss";
 
 const MyStock = () => {
   const [products, setProducts] = useState<ProductWithStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedProduct, setExpandedProduct] = useState<number | null>(null);
-  const [editingItem, setEditingItem] = useState<{
-    type: "product" | "box" | "newBox";
-    id: number | null;
-    productId?: number;
-  } | null>(null);
-  const [editValues, setEditValues] = useState<any>({});
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const [editValues, setEditValues] = useState<EditValues>({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(
+    null
+  );
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   useEffect(() => {
     loadStock();
@@ -75,34 +85,97 @@ const MyStock = () => {
     setEditValues({});
   };
 
-  const saveEdit = async () => {
-    if (!editingItem) return;
+  const openConfirmModal = (
+    type: "save" | "delete",
+    data?: any,
+    originalData?: any,
+    itemName?: string
+  ) => {
+    setConfirmAction({ type, data, originalData, itemName });
+    setShowConfirmModal(true);
+  };
+
+  const closeConfirmModal = () => {
+    setShowConfirmModal(false);
+    setConfirmAction(null);
+  };
+
+  const executeAction = async () => {
+    if (!confirmAction) return;
 
     try {
-      if (editingItem.type === "product" && editingItem.id) {
-        await updateProduct(editingItem.id, editValues);
-      } else if (editingItem.type === "box" && editingItem.id) {
-        await updateBox(editingItem.id, editValues);
-      } else if (editingItem.type === "newBox" && editingItem.productId) {
-        await addBoxToProduct(editingItem.productId, editValues);
+      if (confirmAction.type === "save") {
+        if (editingItem?.type === "product" && editingItem.id) {
+          await updateProduct(editingItem.id, editValues as ProductEditValues);
+        } else if (editingItem?.type === "box" && editingItem.id) {
+          await updateBox(editingItem.id, editValues as BoxEditValues);
+        } else if (editingItem?.type === "newBox" && editingItem.productId) {
+          await addBoxToProduct(
+            editingItem.productId,
+            editValues as BoxEditValues
+          );
+        }
+      } else if (confirmAction.type === "delete" && confirmAction.data?.id) {
+        await deleteBox(confirmAction.data.id);
       }
 
       await loadStock();
       cancelEdit();
+      closeConfirmModal();
     } catch (error) {
-      console.error("Error guardando cambios:", error);
+      console.error("Error ejecutando acción:", error);
     }
   };
 
-  const handleDeleteBox = async (boxId: number) => {
-    if (window.confirm("¿Estás seguro de eliminar esta caja?")) {
-      try {
-        await deleteBox(boxId);
-        await loadStock();
-      } catch (error) {
-        console.error("Error eliminando caja:", error);
-      }
+  const handleBulkDeleteAll = async () => {
+    try {
+      await deleteAllStock();
+      await loadStock();
+      setShowBulkDeleteModal(false);
+    } catch (error) {
+      console.error("Error eliminando todo el stock:", error);
     }
+  };
+
+  const saveEdit = () => {
+    if (!editingItem) return;
+
+    let itemName = "";
+    let originalData: any = {};
+
+    if (editingItem.type === "product" && editingItem.id) {
+      const product = products.find((p) => p.id === editingItem.id);
+      itemName = `Producto: ${product?.name}`;
+      originalData = {
+        name: product?.name,
+        basePrice: product?.basePrice,
+        active: product?.active,
+      };
+    } else if (editingItem.type === "box" && editingItem.id) {
+      const product = products.find((p) =>
+        p.boxes.some((b) => b.id === editingItem.id)
+      );
+      const box = product?.boxes.find((b) => b.id === editingItem.id);
+      itemName = `Caja de ${product?.name} (${box?.kg}kg)`;
+      originalData = {
+        kg: box?.kg,
+        isFrozen: box?.isFrozen,
+      };
+    } else if (editingItem.type === "newBox" && editingItem.productId) {
+      const product = products.find((p) => p.id === editingItem.productId);
+      itemName = `Nueva caja para ${product?.name}`;
+      originalData = null; // Nueva caja, no hay datos originales
+    }
+
+    openConfirmModal("save", editValues, originalData, itemName);
+  };
+
+  const handleDeleteBox = (boxId: number) => {
+    const product = products.find((p) => p.boxes.some((b) => b.id === boxId));
+    const box = product?.boxes.find((b) => b.id === boxId);
+    const itemName = `Caja de ${product?.name} (${box?.kg}kg)`;
+
+    openConfirmModal("delete", { id: boxId }, box, itemName);
   };
 
   const formatDate = (dateString: string) => {
@@ -150,7 +223,7 @@ const MyStock = () => {
                     editingItem.id === product.id ? (
                       <input
                         type="text"
-                        value={editValues.name}
+                        value={(editValues as ProductEditValues).name}
                         onChange={(e) =>
                           setEditValues({ ...editValues, name: e.target.value })
                         }
@@ -176,7 +249,7 @@ const MyStock = () => {
                     <input
                       type="number"
                       step="0.01"
-                      value={editValues.basePrice}
+                      value={(editValues as ProductEditValues).basePrice}
                       onChange={(e) =>
                         setEditValues({
                           ...editValues,
@@ -195,7 +268,11 @@ const MyStock = () => {
                   {editingItem?.type === "product" &&
                   editingItem.id === product.id ? (
                     <select
-                      value={editValues.active ? "true" : "false"}
+                      value={
+                        (editValues as ProductEditValues).active
+                          ? "true"
+                          : "false"
+                      }
                       onChange={(e) =>
                         setEditValues({
                           ...editValues,
@@ -219,13 +296,23 @@ const MyStock = () => {
                   )}
                 </div>
 
-                <div className={s.cell}>
+                <div className={s.cell} id={s.stockCell}>
                   <span
                     className={`${s.stockCount} ${
                       hasStock ? s.hasStock : s.noStock
                     }`}
                   >
                     {product.boxes.length} cajas
+                  </span>
+                  <span
+                    className={`${s.stockCount} ${
+                      hasStock ? s.hasStock : s.noStock
+                    }`}
+                  >
+                    {product.boxes
+                      .reduce((total, box) => total + box.kg, 0)
+                      .toFixed(2)}{" "}
+                    kg totales
                   </span>
                 </div>
 
@@ -263,7 +350,7 @@ const MyStock = () => {
                   <div className={s.boxesHeader}>
                     <div className={s.boxHeaderCell}>Peso (kg)</div>
                     <div className={s.boxHeaderCell}>Tipo</div>
-                    <div className={s.boxHeaderCell}>Fecha Creación</div>
+                    <div className={s.boxHeaderCell}>Fecha de ingreso</div>
                     <div className={s.boxHeaderCell}>Acciones</div>
                   </div>
 
@@ -275,7 +362,7 @@ const MyStock = () => {
                           <input
                             type="number"
                             step="0.01"
-                            value={editValues.kg}
+                            value={(editValues as BoxEditValues).kg}
                             onChange={(e) =>
                               setEditValues({
                                 ...editValues,
@@ -293,7 +380,11 @@ const MyStock = () => {
                         {editingItem?.type === "box" &&
                         editingItem.id === box.id ? (
                           <select
-                            value={editValues.isFrozen ? "true" : "false"}
+                            value={
+                              (editValues as BoxEditValues).isFrozen
+                                ? "true"
+                                : "false"
+                            }
                             onChange={(e) =>
                               setEditValues({
                                 ...editValues,
@@ -313,7 +404,9 @@ const MyStock = () => {
                       </div>
 
                       <div className={s.boxCell}>
-                        {formatDate(box.createdAt)}
+                        {box.entryDate
+                          ? formatDate(box.entryDate)
+                          : "No existe entry date"}
                       </div>
 
                       <div className={s.boxCell}>
@@ -359,7 +452,7 @@ const MyStock = () => {
                           type="number"
                           step="0.01"
                           placeholder="Peso..."
-                          value={editValues.kg}
+                          value={(editValues as BoxEditValues).kg}
                           onChange={(e) =>
                             setEditValues({
                               ...editValues,
@@ -371,7 +464,11 @@ const MyStock = () => {
                       </div>
                       <div className={s.boxCell}>
                         <select
-                          value={editValues.isFrozen ? "true" : "false"}
+                          value={
+                            (editValues as BoxEditValues).isFrozen
+                              ? "true"
+                              : "false"
+                          }
                           onChange={(e) =>
                             setEditValues({
                               ...editValues,
@@ -412,6 +509,206 @@ const MyStock = () => {
           );
         })}
       </div>
+
+      {/* Sección de Acciones en Masa */}
+      <div className={s.bulkActions}>
+        <h3 className={s.bulkActionsTitle}>Acciones en Masa</h3>
+        <div className={s.bulkActionsContent}>
+          <p className={s.bulkActionsDescription}>
+            Gestiona todo el stock de forma masiva
+          </p>
+          <button
+            onClick={() => setShowBulkDeleteModal(true)}
+            className={s.bulkDeleteBtn}
+          >
+            🗑️ Eliminar Todo el Stock
+          </button>
+        </div>
+      </div>
+
+      {/* Modal de Confirmación */}
+      {showConfirmModal && confirmAction && (
+        <div className={s.modalOverlay} onClick={closeConfirmModal}>
+          <div className={s.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <div className={s.modalHeader}>
+              <h3>
+                {confirmAction.type === "save"
+                  ? "Confirmar Cambios"
+                  : "Confirmar Eliminación"}
+              </h3>
+              <button className={s.closeBtn} onClick={closeConfirmModal}>
+                ×
+              </button>
+            </div>
+
+            <div className={s.modalContent}>
+              <div className={s.itemInfo}>
+                <h4>{confirmAction.itemName}</h4>
+              </div>
+
+              {confirmAction.type === "save" ? (
+                <div className={s.changesSection}>
+                  <h5>Cambios a realizar:</h5>
+                  <div className={s.changesGrid}>
+                    {Object.entries(confirmAction.data || {}).map(
+                      ([key, newValue]) => {
+                        const originalValue = confirmAction.originalData?.[key];
+                        const isChanged = originalValue !== newValue;
+
+                        return (
+                          <div
+                            key={key}
+                            className={`${s.changeItem} ${
+                              isChanged ? s.changed : s.unchanged
+                            }`}
+                          >
+                            <div className={s.fieldName}>
+                              {key === "name" && "Nombre:"}
+                              {key === "basePrice" && "Precio Base:"}
+                              {key === "active" && "Estado:"}
+                              {key === "kg" && "Peso:"}
+                              {key === "isFrozen" && "Tipo:"}
+                            </div>
+                            <div className={s.values}>
+                              {confirmAction.originalData ? (
+                                <>
+                                  <span className={s.originalValue}>
+                                    {key === "basePrice" &&
+                                      `$${(
+                                        originalValue as number
+                                      )?.toLocaleString("es-AR")}`}
+                                    {key === "active" &&
+                                      (originalValue ? "Activo" : "Inactivo")}
+                                    {key === "kg" && `${originalValue} kg`}
+                                    {key === "isFrozen" &&
+                                      (originalValue
+                                        ? "🧊 Congelado"
+                                        : "❄️ Refrigerado")}
+                                    {key === "name" && String(originalValue)}
+                                  </span>
+                                  <span className={s.arrow}>→</span>
+                                </>
+                              ) : (
+                                <span className={s.newLabel}>Nuevo:</span>
+                              )}
+                              <span
+                                className={`${s.newValue} ${
+                                  isChanged ? s.highlighted : ""
+                                }`}
+                              >
+                                {key === "basePrice" &&
+                                  `$${(newValue as number)?.toLocaleString(
+                                    "es-AR"
+                                  )}`}
+                                {key === "active" &&
+                                  (newValue ? "Activo" : "Inactivo")}
+                                {key === "kg" && `${newValue} kg`}
+                                {key === "isFrozen" &&
+                                  (newValue
+                                    ? "🧊 Congelado"
+                                    : "❄️ Refrigerado")}
+                                {key === "name" && String(newValue)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className={s.deleteWarning}>
+                  <div className={s.warningIcon}>⚠️</div>
+                  <p>
+                    Esta acción eliminará permanentemente la caja del stock.
+                  </p>
+                  <div className={s.deleteDetails}>
+                    <p>
+                      <strong>Peso:</strong> {confirmAction.originalData?.kg} kg
+                    </p>
+                    <p>
+                      <strong>Tipo:</strong>{" "}
+                      {confirmAction.originalData?.isFrozen
+                        ? "🧊 Congelado"
+                        : "❄️ Refrigerado"}
+                    </p>
+                    <p>
+                      <strong>Fecha:</strong>{" "}
+                      {confirmAction.originalData?.createdAt &&
+                        formatDate(confirmAction.originalData.createdAt)}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={s.modalFooter}>
+              <button onClick={closeConfirmModal} className={s.cancelModalBtn}>
+                Cancelar
+              </button>
+              <button
+                onClick={executeAction}
+                className={
+                  confirmAction.type === "save"
+                    ? s.confirmSaveBtn
+                    : s.confirmDeleteBtn
+                }
+              >
+                {confirmAction.type === "save"
+                  ? "Guardar Cambios"
+                  : "Eliminar Caja"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación para Eliminar Todo el Stock */}
+      {showBulkDeleteModal && (
+        <div
+          className={s.modalOverlay}
+          onClick={() => setShowBulkDeleteModal(false)}
+        >
+          <div className={s.confirmModal} onClick={(e) => e.stopPropagation()}>
+            <div className={s.modalHeader}>
+              <h3>Confirmar Eliminación Masiva</h3>
+              <button
+                className={s.closeBtn}
+                onClick={() => setShowBulkDeleteModal(false)}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className={s.modalContent}>
+              <div className={s.deleteWarning}>
+                <div className={s.warningIcon}>⚠️</div>
+                <p>
+                  <strong>
+                    Esta acción eliminará TODAS las cajas de stock disponibles.
+                  </strong>
+                </p>
+                <p>Esta acción no es reversible.</p>
+              </div>
+            </div>
+
+            <div className={s.modalFooter}>
+              <button
+                onClick={() => setShowBulkDeleteModal(false)}
+                className={s.cancelModalBtn}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleBulkDeleteAll}
+                className={s.confirmDeleteBtn}
+              >
+                Eliminar Todo el Stock
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
