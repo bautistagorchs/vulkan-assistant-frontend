@@ -31,8 +31,8 @@ export interface Box {
   id: number;
   productId: number;
   kg: number;
-  isRefrigerated: boolean;
   isFrozen: boolean;
+  entryDate?: string;
 }
 
 export interface BoxWithDetails {

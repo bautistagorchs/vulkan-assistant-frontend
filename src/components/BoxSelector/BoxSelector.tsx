@@ -45,6 +45,9 @@ const BoxSelector: React.FC<BoxSelectorProps> = ({
       }
     });
   };
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("es-AR");
+  };
 
   const handleConfirm = () => {
     if (selectedBoxes.length > 0) {
@@ -116,15 +119,18 @@ const BoxSelector: React.FC<BoxSelectorProps> = ({
                       </div>
                       <div className={s.boxInfo}>
                         <div className={s.weight}>{box.kg} kg</div>
+                        {box.entryDate && (
+                          <div className={s.date}>
+                            {formatDate(box.entryDate)}
+                          </div>
+                        )}
                         <div className={s.temperature}>
                           {box.isFrozen ? (
                             <span className={s.frozen}>🧊 Congelado</span>
-                          ) : box.isRefrigerated ? (
+                          ) : (
                             <span className={s.refrigerated}>
                               ❄️ Refrigerado
                             </span>
-                          ) : (
-                            <span className={s.ambient}>🌡️ Ambiente</span>
                           )}
                         </div>
                       </div>

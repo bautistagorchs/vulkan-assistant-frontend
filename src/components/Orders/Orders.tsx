@@ -2,14 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import s from "./_orders.module.scss";
-import { getClients, getAllProducts, createOrderWithBoxes } from "@/lib/api";
+import { getClients, getAllProducts, createOrder, getOrders } from "@/lib/api";
 import { Client, Box, SelectedProduct, TabKey, Product } from "@/lib/types";
 import BoxSelector from "../BoxSelector/BoxSelector";
 
 const Orders = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("nuevo");
-  const [orders] = useState([]);
-  const [loading] = useState<boolean>(false);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [productos, setProductos] = useState<Product[]>([]);
@@ -24,6 +24,33 @@ const Orders = () => {
     useState<Product | null>(null);
   const [confirmMsg, setConfirmMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+
+  // Cargar pedidos
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const ordersData = await getOrders();
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Error al cargar pedidos:", error);
+      setError("Error al cargar los pedidos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar pedidos cuando se activa la tab listado
+  useEffect(() => {
+    if (activeTab === "listado") {
+      fetchOrders();
+    }
+  }, [activeTab]);
+
+  // Manejar expansión de pedido
+  const handleToggleOrderExpansion = (orderId: number) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
 
   // Seleccionar producto para elegir cajas
   const handleSelectProduct = (productId: number) => {
@@ -88,8 +115,9 @@ const Orders = () => {
         productId: product.productId,
         boxIds: product.selectedBoxes.map((box) => box.id),
       }));
+      console.log("Al api.ts se envian: ", { clienteId, orderItems });
 
-      await createOrderWithBoxes(Number(clienteId), orderItems);
+      await createOrder(Number(clienteId), orderItems);
 
       setConfirmMsg("¡Pedido confirmado exitosamente!");
       setTimeout(() => setConfirmMsg(null), 3000);
@@ -97,6 +125,11 @@ const Orders = () => {
       // Limpiar formulario
       setClienteId("");
       setSelectedProducts([]);
+
+      // Recargar pedidos si estamos en la tab listado
+      if (activeTab === "listado") {
+        fetchOrders();
+      }
     } catch (error) {
       console.error("Error al confirmar pedido:", error);
       setError("Error al confirmar el pedido. Intenta nuevamente.");
@@ -191,11 +224,18 @@ const Orders = () => {
                         className={s.input}
                       >
                         <option value="">Seleccionar cliente...</option>
-                        {clients.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
+                        {clients
+                          .slice()
+                          .sort((a, b) =>
+                            a.name.localeCompare(b.name, "es", {
+                              sensitivity: "base",
+                            })
+                          )
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
 
@@ -217,15 +257,22 @@ const Orders = () => {
                           <option value="">
                             Elegir producto para agregar...
                           </option>
-                          {productos.map((p) => (
-                            <option
-                              key={p.id}
-                              value={p.id}
-                              disabled={!p.hasStock}
-                            >
-                              {p.name}
-                            </option>
-                          ))}
+                          {productos
+                            .slice()
+                            .sort((a, b) =>
+                              a.name.localeCompare(b.name, "es", {
+                                sensitivity: "base",
+                              })
+                            )
+                            .map((p) => (
+                              <option
+                                key={p.id}
+                                value={p.id}
+                                disabled={!p.hasStock}
+                              >
+                                {p.name}
+                              </option>
+                            ))}
                         </select>
                       </div>
                       <div className={s.hint}>
@@ -264,9 +311,7 @@ const Orders = () => {
                                     <span className={s.boxType}>
                                       {box.isFrozen
                                         ? "🧊 Congelado"
-                                        : box.isRefrigerated
-                                        ? "❄️ Refrigerado"
-                                        : "🌡️ Ambiente"}
+                                        : "❄️ Refrigerado"}
                                     </span>
                                   </div>
                                 ))}
@@ -322,55 +367,137 @@ const Orders = () => {
               <table className={s.ordersTable}>
                 <thead>
                   <tr>
+                    <th></th>
                     <th>Cliente</th>
                     <th>Fecha</th>
                     <th>Productos</th>
                     <th>Kilos Totales</th>
                     <th>Total Cajas</th>
+                    <th>Monto Total</th>
                     <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {orders.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className={s.ordersVacio}>
+                      <td colSpan={8} className={s.ordersVacio}>
                         No hay pedidos cargados.
                       </td>
                     </tr>
                   ) : (
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     orders.map((order: any) => {
-                      const client = clients.find(
-                        (c) => c.id === order.clientId
+                      const totalKg = order.items.reduce(
+                        (acc: number, item: any) => acc + item.totalKg,
+                        0
                       );
+                      const totalBoxes = order.items.reduce(
+                        (acc: number, item: any) => acc + item.boxes.length,
+                        0
+                      );
+                      const totalAmount = order.invoice?.total || 0;
+                      const isExpanded = expandedOrder === order.id;
+
                       return (
-                        <tr key={order.id}>
-                          <td>{client?.name || "Desconocido"}</td>
-                          <td>{new Date(order.date).toLocaleDateString()}</td>
-                          <td>
-                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                            {order.items
-                              ?.map((item: any) => {
-                                const prod = productos.find(
-                                  (p) => p.id === item.productId
-                                );
-                                return `${prod?.name || "Desconocido"} (${
-                                  item.boxIds?.length || 0
-                                } cajas)`;
-                              })
-                              .join(", ")}
-                          </td>
-                          <td>{order.totalKg || 0} kg</td>
-                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                          <td>
-                            {order.items?.reduce(
-                              (acc: number, item: any) =>
-                                acc + (item.boxIds?.length || 0),
-                              0
-                            ) || 0}
-                          </td>
-                          <td>Confirmado</td>
-                        </tr>
+                        <React.Fragment key={order.id}>
+                          <tr
+                            className={s.orderRow}
+                            onClick={() => handleToggleOrderExpansion(order.id)}
+                          >
+                            <td className={s.expandIcon}>
+                              <span
+                                className={
+                                  isExpanded ? s.expanded : s.collapsed
+                                }
+                              >
+                                {isExpanded ? "▼" : "▶"}
+                              </span>
+                            </td>
+                            <td>{order.client?.name || "Desconocido"}</td>
+                            <td>
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </td>
+                            <td>
+                              {order.items
+                                ?.map(
+                                  (item: any) =>
+                                    item.product?.name || "Desconocido"
+                                )
+                                .join(", ")}
+                            </td>
+                            <td>{totalKg.toFixed(2)} kg</td>
+                            <td>{totalBoxes}</td>
+                            <td>${totalAmount.toFixed(2)}</td>
+                            <td>
+                              <span className={s.orderStatus}>
+                                {order.invoice?.paymentStatus === "PAID"
+                                  ? "Pagado"
+                                  : order.invoice?.paymentStatus === "CHEQUE"
+                                  ? "Cheque"
+                                  : "Pendiente"}
+                              </span>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className={s.expandedRow}>
+                              <td colSpan={8}>
+                                <div className={s.orderDetails}>
+                                  <h4>Detalles del Pedido #{order.id}</h4>
+                                  {order.items?.map(
+                                    (item: any, itemIndex: number) => (
+                                      <div
+                                        key={itemIndex}
+                                        className={s.itemDetail}
+                                      >
+                                        <h5>
+                                          {item.product?.name ||
+                                            "Producto desconocido"}
+                                        </h5>
+                                        <p>
+                                          <strong>Total del producto:</strong>{" "}
+                                          {item.totalKg} kg - $
+                                          {item.subtotal.toFixed(2)} ($
+                                          {item.unitPrice}/kg)
+                                        </p>
+                                        <div className={s.boxesList}>
+                                          <strong>Cajas incluidas:</strong>
+                                          {item.boxes?.map(
+                                            (box: any, boxIndex: number) => (
+                                              <div
+                                                key={boxIndex}
+                                                className={s.boxDetail}
+                                              >
+                                                <span className={s.boxInfo}>
+                                                  📦 Caja #{box.id} - {box.kg}{" "}
+                                                  kg -
+                                                  {box.isFrozen
+                                                    ? " 🧊 Congelado"
+                                                    : " ❄️ Refrigerado"}
+                                                  {box.entryDate && (
+                                                    <span
+                                                      className={s.entryDate}
+                                                    >
+                                                      {" "}
+                                                      (Ingreso:{" "}
+                                                      {new Date(
+                                                        box.entryDate
+                                                      ).toLocaleDateString()}
+                                                      )
+                                                    </span>
+                                                  )}
+                                                </span>
+                                              </div>
+                                            )
+                                          )}
+                                        </div>
+                                      </div>
+                                    )
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })
                   )}
